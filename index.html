@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assuring AI with ThousandEyes</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #040d1e;
+    font-family: 'Exo 2', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .slide {
+    width: 1400px;
+    min-height: 820px;
+    background: linear-gradient(135deg, #050f24 0%, #071530 50%, #060d20 100%);
+    border-radius: 16px;
+    padding: 40px 48px 36px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 80px rgba(0,120,255,0.15);
+  }
+
+  /* Grid overlay */
+  .slide::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,180,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,180,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  /* Glow orbs */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    opacity: 0.15;
+  }
+  .orb1 { width: 400px; height: 400px; background: #0055ff; top: -100px; left: -100px; }
+  .orb2 { width: 300px; height: 300px; background: #00c8ff; bottom: -50px; right: 200px; }
+  .orb3 { width: 200px; height: 200px; background: #ff4400; top: 50%; right: -50px; opacity: 0.08; }
+
+  /* Header */
+  .header { margin-bottom: 28px; position: relative; z-index: 1; }
+  .header h1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 42px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .header h1 span { color: #1af0ff; }
+  .header .subtitle {
+    font-size: 16px;
+    color: #1af0ff;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  /* Main layout */
+  .main-layout {
+    display: flex;
+    gap: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Flow section */
+  .flow-section {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Row labels */
+  .row-label {
+    font-size: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    color: #4a7fa5;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    padding-left: 4px;
+  }
+
+  /* Flow rows */
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 10px;
+  }
+
+  /* Node */
+  .node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100px;
+    min-width: 90px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .node-box {
+    width: 88px;
+    height: 76px;
+    border: 1.5px solid;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 6px 6px;
+    position: relative;
+    cursor: default;
+    transition: all 0.2s;
+  }
+  .node-box:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.15);
+  }
+
+  .node-box .icon {
+    font-size: 22px;
+    margin-bottom: 4px;
+    line-height: 1;
+  }
+  .node-box .label {
+    font-size: 10px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+  }
+
+  .node-tag {
+    margin-top: 4px;
+    font-size: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    color: #3a6080;
+    text-align: center;
+    line-height: 1.3;
+    max-width: 90px;
+  }
+
+  /* Color themes per node type */
+  .node-blue .node-box { border-color: #1a6eb5; background: rgba(20,60,110,0.5); color: #7ec8ff; }
+  .node-cyan .node-box { border-color: #00b4d8; background: rgba(0,100,140,0.4); color: #00e5ff; }
+  .node-teal .node-box { border-color: #00897b; background: rgba(0,80,70,0.4); color: #4db6ac; }
+  .node-green .node-box { border-color: #2e7d32; background: rgba(20,70,30,0.4); color: #69c96f; }
+  .node-orange .node-box { border-color: #e65100; background: rgba(90,40,10,0.4); color: #ff9d42; }
+  .node-red .node-box { border-color: #c62828; background: rgba(90,20,20,0.4); color: #ef9a9a; }
+  .node-purple .node-box { border-color: #6a1b9a; background: rgba(60,20,90,0.4); color: #ce93d8; }
+  .node-gold .node-box { border-color: #f57f17; background: rgba(90,60,10,0.4); color: #ffe082; }
+  .node-gray .node-box { border-color: #37474f; background: rgba(30,50,60,0.35); color: #90a4ae; }
+
+  /* Arrows */
+  .arrow {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-width: 20px;
+    margin-bottom: 20px; /* offset for tag below node */
+  }
+  .arrow::after {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, #1a5080, #1af0ff55);
+    position: relative;
+  }
+  .arrow-head {
+    position: absolute;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 8px solid #1af0ff88;
+  }
+  .arrow-label {
+    position: absolute;
+    top: -14px;
+    font-size: 7.5px;
+    font-family: 'Share Tech Mono', monospace;
+    color: #2a7fa0;
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+  }
+
+  /* Divider row — vertical connections */
+  .vertical-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    margin: 4px 0 8px;
+    padding-left: 8px;
+  }
+
+  /* Right panel — ThousandEyes features */
+  .right-panel {
+    width: 300px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* TE logo box */
+  .te-features {
+    border: 1.5px solid #1a4060;
+    border-radius: 12px;
+    padding: 18px 16px;
+    background: rgba(5, 20, 45, 0.7);
+    position: relative;
+    overflow: hidden;
+  }
+  .te-features::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,180,255,0.04), transparent);
+    pointer-events: none;
+  }
+  .te-logo {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .te-logo .eye { color: #1af0ff; font-size: 22px; }
+  .te-logo span { color: #1af0ff; }
+
+  .feature-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: flex-start;
+  }
+  .feature-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #1af0ff;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+  .feature-text {
+    font-size: 12px;
+    color: #b0cfe0;
+    line-height: 1.45;
+    font-weight: 400;
+  }
+
+  /* Legend */
+  .legend {
+    border: 1px solid #1a3050;
+    border-radius: 10px;
+    padding: 14px;
+    background: rgba(5,15,35,0.6);
+  }
+  .legend-title {
+    font-size: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    color: #4a7fa5;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    border: 1.5px solid;
+    flex-shrink: 0;
+  }
+  .legend-text { font-size: 10.5px; color: #7aa8c0; }
+
+  /* Cisco logo bottom right */
+  .cisco-logo {
+    position: absolute;
+    bottom: 20px;
+    right: 24px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #2a5a80;
+    letter-spacing: 0.15em;
+  }
+  .cisco-logo span { color: #1a8fbf; }
+
+  /* Confidential */
+  .confidential {
+    position: absolute;
+    bottom: 20px;
+    left: 24px;
+    font-size: 9px;
+    font-family: 'Share Tech Mono', monospace;
+    color: #2a4a60;
+    letter-spacing: 0.1em;
+  }
+
+  /* Second row — security layer */
+  .security-layer {
+    margin: 8px 0 12px;
+    border: 1px dashed rgba(255, 100, 50, 0.3);
+    border-radius: 10px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: rgba(255,50,0,0.03);
+    position: relative;
+  }
+  .security-layer-label {
+    position: absolute;
+    top: -9px;
+    left: 12px;
+    font-size: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    color: #ff7040;
+    background: #040d1e;
+    padding: 0 6px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .section-label {
+    font-size: 9px;
+    font-family: 'Share Tech Mono', monospace;
+    color: #3a6080;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    margin-top: 4px;
+  }
+
+  hr.divider {
+    border: none;
+    border-top: 1px solid rgba(26, 80, 128, 0.25);
+    margin: 8px 0;
+  }
+
+</style>
+</head>
+<body>
+
+<div class="slide">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Assuring <span>AI</span> with ThousandEyes</h1>
+    <div class="subtitle">Going beyond basic availability — full-stack AI observability</div>
+  </div>
+
+  <div class="main-layout">
+    <div class="flow-section">
+
+      <!-- ROW LABEL -->
+      <div class="row-label">▸ Primary Request Flow</div>
+
+      <!-- MAIN FLOW ROW 1: User → UI → Corp Net → Internet → API GW → AI Router → LLM API -->
+      <div class="flow-row">
+
+        <div class="node node-blue">
+          <div class="node-box">
+            <div class="icon">💻</div>
+            <div class="label">End User</div>
+          </div>
+          <div class="node-tag">Employee Device</div>
+        </div>
+
+        <div class="arrow">
+          <div class="arrow-label">HTTPS</div>
+          <div class="arrow-head"></div>
+        </div>
+
+        <div class="node node-cyan">
+          <div class="node-box">
+            <div class="icon">🖥️</div>
+            <div class="label">AI User Interface</div>
+          </div>
+          <div class="node-tag">Browser / App / LLM Interface</div>
+        </div>
+
+        <div class="arrow">
+          <div class="arrow-label">TLS 1.3</div>
+          <div class="arrow-head"></div>
+        </div>
+
+        <div class="node node-teal">
+          <div class="node-box">
+            <div class="icon">🔀</div>
+            <div class="label">Corp. Network</div>
+          </div>
+          <div class="node-tag">Firewall | Proxy | SSE | ZTNA</div>
+        </div>
+
+        <div class="arrow">
+          <div class="arrow-label">BGP / MPLS</div>
+          <div class="arrow-head"></div>
+        </div>
+
+        <div class="node node-blue">
+          <div class="node-box">
+            <div class="icon">🌐</div>
+            <div class="label">Internet</div>
+          </div>
+          <div class="node-tag">ISP | Transit | CDN</div>
+        </div>
+
+        <div class="arrow">
+          <div class="arrow-label">REST / gRPC</div>
+          <div class="arrow-head"></div>
+        </div>
+
+        <div class="node node-orange">
+          <div class="node-box">
+            <div class="icon">🚪</div>
+            <div class="label">API Gateway</div>
+          </div>
+          <div class="node-tag">Auth | Rate Limit | Load Balance</div>
+        </div>
+
+        <div class="arrow">
+          <div class="arrow-label">Token</div>
+          <div class="arrow-head"></div>
+        </div>
+
+        <div class="node node-purple">
+          <div class="node-box">
+            <div class="icon">⚡</div>
+            <div class="label">AI Router</div>
+          </div>
+          <div class="node-tag">Cost | Latency | Model Selection</div>
+        </div>
+
+        <div class="arrow">
+          <div class="arrow-label">Scored</div>
+          <div class="arrow-head"></div>
+        </div>
+
+        <div class="node node-cyan">
+          <div class="node-box">
+            <div class="icon">⚙️</div>
+            <div class="label">LLM API</div>
+          </div>
+          <div class="node-tag">OpenAI | Anthropic | Gemini</div>
+        </div>
+
+      </div>
+      <!-- END ROW 1 -->
+
+      <!-- SECURITY / PROCESSING LAYER -->
+      <div class="security-layer">
+        <div class="security-layer-label">Security &amp; Compliance Processing Layer</div>
+
+        <div class="flow-row" style="margin-bottom:0; flex-wrap: wrap; gap: 6px;">
+
+          <div class="node node-red" style="width:auto; flex-direction:row; min-width:0;">
+            <div class="node-box" style="width:100px; height:62px; flex-direction:row; gap:8px; padding:6px 10px;">
+              <div class="icon" style="font-size:18px; margin:0;">🛡️</div>
+              <div>
+                <div class="label" style="font-size:10px; text-align:left;">Guardrails</div>
+                <div style="font-size:7.5px; color:#c07070; font-family:'Share Tech Mono',monospace;">Input / Output Filter</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="arrow" style="min-width:16px; flex:0.3;">
+            <div class="arrow-head"></div>
+          </div>
+
+          <div class="node node-gold" style="width:auto; flex-direction:row; min-width:0;">
+            <div class="node-box" style="width:120px; height:62px; flex-direction:row; gap:8px; padding:6px 10px;">
+              <div class="icon" style="font-size:18px; margin:0;">🔐</div>
+              <div>
+                <div class="label" style="font-size:10px; text-align:left;">Tokenization Server</div>
+                <div style="font-size:7.5px; color:#c0a050; font-family:'Share Tech Mono',monospace;">PII | DLP | Masking</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="arrow" style="min-width:16px; flex:0.3;">
+            <div class="arrow-head"></div>
+          </div>
+
+          <div class="node node-purple" style="width:auto; flex-direction:row; min-width:0;">
+            <div class="node-box" style="width:120px; height:62px; flex-direction:row; gap:8px; padding:6px 10px;">
+              <div class="icon" style="font-size:18px; margin:0;">🧠</div>
+              <div>
+                <div class="label" style="font-size:10px; text-align:left;">Prompt Cache</div>
+                <div style="font-size:7.5px; color:#a070c0; font-family:'Share Tech Mono',monospace;">KV Cache | Semantic Hash</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="arrow" style="min-width:16px; flex:0.3;">
+            <div class="arrow-head"></div>
+          </div>
+
+          <div class="node node-teal" style="width:auto; flex-direction:row; min-width:0;">
+            <div class="node-box" style="width:120px; height:62px; flex-direction:row; gap:8px; padding:6px 10px;">
+              <div class="icon" style="font-size:18px; margin:0;">📜</div>
+              <div>
+                <div class="label" style="font-size:10px; text-align:left;">Observability</div>
+                <div style="font-size:7.5px; color:#409090; font-family:'Share Tech Mono',monospace;">Tracing | Logging | Spans</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="arrow" style="min-width:16px; flex:0.3;">
+            <div class="arrow-head"></div>
+          </div>
+
+          <div class="node node-green" style="width:auto; flex-direction:row; min-width:0;">
+            <div class="node-box" style="width:115px; height:62px; flex-direction:row; gap:8px; padding:6px 10px;">
+              <div class="icon" style="font-size:18px; margin:0;">✅</div>
+              <div>
+                <div class="label" style="font-size:10px; text-align:left;">Response Validator</div>
+                <div style="font-size:7.5px; color:#406840; font-family:'Share Tech Mono',monospace;">Accuracy | Hallucination</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <!-- END SECURITY LAYER -->
+
+      <!-- ROW LABEL 2 -->
+      <div class="row-label">▸ Inference &amp; Tool-Use Flow</div>
+
+      <!-- MAIN FLOW ROW 2: LLM Server → MCP Server → Enterprise Resources -->
+      <div class="flow-row">
+
+        <div class="node node-blue">
+          <div class="node-box">
+            <div class="icon">☁️</div>
+            <div class="label">LLM Server</div>
+          </div>
+          <div class="node-tag">Cloud Provider | GPU Cluster</div>
+        </div>
+
+        <div class="arrow">
+          <div class="arrow-label">Tool Call</div>
+          <div class="arrow-head"></div>
+        </div>
+
+        <div class="node node-cyan">
+          <div class="node-box">
+            <div class="icon">🖧</div>
+            <div class="label">MCP Server</div>
+          </div>
+          <div class="node-tag">Tool Discovery | Auth | Broker</div>
+        </div>
+
+        <div class="arrow">
+          <div class="arrow-label">OAuth 2.0</div>
+          <div class="arrow-head"></div>
+        </div>
+
+        <div class="node node-orange">
+          <div class="node-box">
+            <div class="icon">🔑</div>
+            <div class="label">Identity &amp; Auth</div>
+          </div>
+          <div class="node-tag">OIDC | SAML | API Keys</div>
+        </div>
+
+        <div class="arrow">
+          <div class="arrow-label">Signed JWT</div>
+          <div class="arrow-head"></div>
+        </div>
+
+        <div class="node node-green">
+          <div class="node-box">
+            <div class="icon">🗄️</div>
+            <div class="label">Enterprise APIs</div>
+          </div>
+          <div class="node-tag">CRM | ERP | Internal SaaS</div>
+        </div>
+
+        <div class="arrow">
+          <div class="arrow-label">Query</div>
+          <div class="arrow-head"></div>
+        </div>
+
+        <div class="node node-teal">
+          <div class="node-box">
+            <div class="icon">🔎</div>
+            <div class="label">Vector DB / RAG</div>
+          </div>
+          <div class="node-tag">Embeddings | Similarity Search</div>
+        </div>
+
+        <div class="arrow">
+          <div class="arrow-label">Results</div>
+          <div class="arrow-head"></div>
+        </div>
+
+        <div class="node node-gray">
+          <div class="node-box">
+            <div class="icon">📂</div>
+            <div class="label">MCP Clients</div>
+          </div>
+          <div class="node-tag">Tools | Databases | Filesystems</div>
+        </div>
+
+        <div class="arrow" style="flex: 0.5;">
+          <div class="arrow-head"></div>
+        </div>
+
+        <div class="node node-purple">
+          <div class="node-box">
+            <div class="icon">🔧</div>
+            <div class="label">Enterprise Tools</div>
+          </div>
+          <div class="node-tag">Jira | Slack | GitHub | SAP</div>
+        </div>
+
+      </div>
+      <!-- END ROW 2 -->
+
+    </div>
+    <!-- END FLOW SECTION -->
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+      <div class="te-features">
+        <div class="te-logo">
+          <span>ThousandEyes</span> <span class="eye">◎</span>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-dot"></div>
+          <div class="feature-text">Visibility into latency, response times, token utilization, and LLM service availability across all providers</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-dot"></div>
+          <div class="feature-text">Monitor API Gateway health — rate limits, auth failures, throttling events, and upstream error rates</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-dot"></div>
+          <div class="feature-text">Inspect AI Router decisions: model routing logic, fallback triggers, cost vs. latency tradeoffs</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-dot"></div>
+          <div class="feature-text">Validate Guardrail and Tokenization server performance — filter latency, PII detection accuracy</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-dot"></div>
+          <div class="feature-text">Inspect MCP resources: validate tool discovery, auth flows, and request broker state</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-dot"></div>
+          <div class="feature-text">Validate response accuracy, hallucination scores, and consistency across model versions</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-dot"></div>
+          <div class="feature-text">Assure connectivity across owned and unowned networks end-to-end, including RAG and vector DB paths</div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-title">Component Legend</div>
+        <div class="legend-row"><div class="legend-dot" style="border-color:#1a6eb5; background:rgba(20,60,110,0.5);"></div><div class="legend-text">Network / Infrastructure</div></div>
+        <div class="legend-row"><div class="legend-dot" style="border-color:#e65100; background:rgba(90,40,10,0.4);"></div><div class="legend-text">API Gateway / Routing</div></div>
+        <div class="legend-row"><div class="legend-dot" style="border-color:#c62828; background:rgba(90,20,20,0.4);"></div><div class="legend-text">Security / Guardrails</div></div>
+        <div class="legend-row"><div class="legend-dot" style="border-color:#f57f17; background:rgba(90,60,10,0.4);"></div><div class="legend-text">Tokenization / DLP</div></div>
+        <div class="legend-row"><div class="legend-dot" style="border-color:#6a1b9a; background:rgba(60,20,90,0.4);"></div><div class="legend-text">AI Processing / Caching</div></div>
+        <div class="legend-row"><div class="legend-dot" style="border-color:#2e7d32; background:rgba(20,70,30,0.4);"></div><div class="legend-text">Enterprise Integrations</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cisco-logo"><span>cisco</span></div>
+  <div class="confidential">© Cisco Confidential</div>
+</div>
+
+</body>
+</html>
